@@ -75,8 +75,8 @@ metadata = {
             'default': '/admin'
         },
         'vhost': {
-            'type': 'address',
-            'description': 'Virtual host',
+            'type': 'string',
+            'description': 'Virtual host. ex: target.com',
             'required': False,
             'default': None
         },
@@ -101,7 +101,7 @@ metadata = {
         'verbose': {
             'type': 'bool',
             'description': 'Get verbose output',
-            'required': True,
+            'required': False,
             'default': False
         }
     }

