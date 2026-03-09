@@ -1,5 +1,5 @@
 GIT
-  remote: https://github.com/zeroSteiner/rex-text
+  remote: https://github.com/dledda-r7/rex-text
   revision: 995d34cc4720b87ad70adeb2d6d2c7696834a276
   branch: feat/block-api-iv
   specs:
