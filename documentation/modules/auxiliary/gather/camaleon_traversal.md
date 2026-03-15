@@ -28,26 +28,6 @@ The filepath of the file to read.
 
 The number of "../" appended to the filename. Default is 13
 
-### targeturi
-
-The URI path of the Camaleon CMS admin page. Ex: /camaleon/admin
-
-Default is /admin
-
-### ssl
-
-If true, use HTTPS
-
-Default is false
-
-### rhost
-
-The target address.
-
-### rport
-
-The target port number.
-
 ### vhost
 
 Target virtual host/domain name. Ex: target.com
