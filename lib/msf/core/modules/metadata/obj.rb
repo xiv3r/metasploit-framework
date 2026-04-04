@@ -8,6 +8,45 @@ module Modules
 module Metadata
 
 class Obj
+  # Frozen shared objects to avoid allocating duplicate empty containers
+  EMPTY_ARRAY = [].freeze
+  EMPTY_HASH = {}.freeze
+
+  # PlatformList cache to avoid re-parsing identical platform strings
+  @platform_list_cache = {}
+
+  class << self
+    # Deduplicate a string via Ruby's built-in frozen string table (fstring).
+    # Identical string contents will share a single frozen object in memory,
+    # reducing heap usage for highly repeated values like type, platform, arch, and author.
+    # @param str [String, nil] the string to intern
+    # @return [String, nil] a frozen, deduplicated copy of the string, or nil
+    def dedup_string(str)
+      return str unless str.is_a?(String)
+
+      -str
+    end
+
+    # Retrieve or build a cached PlatformList for the given platform string.
+    # @param platform_string [String, nil]
+    # @return [Msf::Module::PlatformList, nil]
+    def cached_platform_list(platform_string)
+      return nil if platform_string.nil?
+
+      @platform_list_cache[platform_string] ||= build_platform_list(platform_string)
+    end
+
+    private
+
+    def build_platform_list(platform_string)
+      if platform_string.casecmp?('All')
+        platforms = ['']
+      else
+        platforms = platform_string.split(',')
+      end
+      Msf::Module::PlatformList.transform(platforms)
+    end
+  end
   # @return [Hash]
   attr_reader :actions
   # @return [String]
@@ -227,29 +266,36 @@ class Obj
   #######
 
   def init_from_hash(obj_hash)
+    dedup = self.class.method(:dedup_string)
+
     @actions             = obj_hash['actions']
     @name                = obj_hash['name']
     @fullname            = obj_hash['fullname']
-    @aliases             = obj_hash['aliases'] || []
+    @aliases             = obj_hash['aliases']
+    @aliases             = (@aliases.nil? || @aliases.empty?) ? EMPTY_ARRAY : @aliases
     @disclosure_date     = obj_hash['disclosure_date'].nil? ? nil : Time.parse(obj_hash['disclosure_date'])
     @rank                = obj_hash['rank']
-    @type                = obj_hash['type']
+    @type                = dedup.(obj_hash['type'])
     @description         = obj_hash['description']
-    @author              = obj_hash['author'].nil? ? [] : obj_hash['author']
+    @author              = obj_hash['author']
+    @author              = (@author.nil? || @author.empty?) ? EMPTY_ARRAY : @author.map { |a| dedup.(a) }
     @references          = obj_hash['references']
-    @platform            = obj_hash['platform']
-    @platform_list       = parse_platform_list(@platform)
-    @arch                = obj_hash['arch']
+    @references          = (@references.nil? || @references.empty?) ? EMPTY_ARRAY : @references
+    @platform            = dedup.(obj_hash['platform'])
+    @platform_list       = Obj.cached_platform_list(@platform)
+    @arch                = dedup.(obj_hash['arch'])
     @rport               = obj_hash['rport']
     @mod_time            = Time.parse(obj_hash['mod_time'])
     @ref_name            = obj_hash['ref_name']
     @path                = obj_hash['path']
     @is_install_path     = obj_hash['is_install_path']
     @targets             = obj_hash['targets']
+    @targets             = (@targets.nil? || @targets.empty?) ? nil : @targets
     @check               = obj_hash['check'] ? true : false
     @post_auth           = obj_hash['post_auth']
     @default_credential  = obj_hash['default_credential']
-    @notes               = obj_hash['notes'].nil? ? {} : obj_hash['notes']
+    notes                = obj_hash['notes']
+    @notes               = (notes.nil? || notes.empty?) ? EMPTY_HASH : notes
     @needs_cleanup       = obj_hash['needs_cleanup']
     @session_types       = obj_hash['session_types']
     @autofilter_ports    = obj_hash['autofilter_ports']
@@ -290,18 +336,6 @@ class Obj
     @description = @description.dup.force_encoding(encoding)
     @author = @author.map {|a| a.dup.force_encoding(encoding)}
     @references = @references.map {|r| r.dup.force_encoding(encoding)}
-  end
-
-  def parse_platform_list(platform_string)
-    return nil if platform_string.nil?
-
-    if platform_string.casecmp?('All')
-      # empty string represents all platforms in Msf::Module::PlatformList
-      platforms = ['']
-    else
-      platforms = platform_string.split(',')
-    end
-    Msf::Module::PlatformList.transform(platforms)
   end
 
 end
