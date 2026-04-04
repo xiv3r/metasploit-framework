@@ -44,7 +44,9 @@ class Obj
       else
         platforms = platform_string.split(',')
       end
-      Msf::Module::PlatformList.transform(platforms)
+      pl = Msf::Module::PlatformList.transform(platforms)
+      pl.platforms.freeze
+      pl.freeze
     end
   end
   # @return [Hash]
@@ -266,8 +268,6 @@ class Obj
   #######
 
   def init_from_hash(obj_hash)
-    dedup = self.class.method(:dedup_string)
-
     @actions             = obj_hash['actions']
     @name                = obj_hash['name']
     @fullname            = obj_hash['fullname']
@@ -275,22 +275,22 @@ class Obj
     @aliases             = (@aliases.nil? || @aliases.empty?) ? EMPTY_ARRAY : @aliases
     @disclosure_date     = obj_hash['disclosure_date'].nil? ? nil : Time.parse(obj_hash['disclosure_date'])
     @rank                = obj_hash['rank']
-    @type                = dedup.(obj_hash['type'])
+    @type                = Obj.dedup_string(obj_hash['type'])
     @description         = obj_hash['description']
     @author              = obj_hash['author']
-    @author              = (@author.nil? || @author.empty?) ? EMPTY_ARRAY : @author.map { |a| dedup.(a) }
+    @author              = (@author.nil? || @author.empty?) ? EMPTY_ARRAY : @author.map! { |a| Obj.dedup_string(a) }
     @references          = obj_hash['references']
     @references          = (@references.nil? || @references.empty?) ? EMPTY_ARRAY : @references
-    @platform            = dedup.(obj_hash['platform'])
+    @platform            = Obj.dedup_string(obj_hash['platform'])
     @platform_list       = Obj.cached_platform_list(@platform)
-    @arch                = dedup.(obj_hash['arch'])
+    @arch                = Obj.dedup_string(obj_hash['arch'])
     @rport               = obj_hash['rport']
     @mod_time            = Time.parse(obj_hash['mod_time'])
     @ref_name            = obj_hash['ref_name']
     @path                = obj_hash['path']
     @is_install_path     = obj_hash['is_install_path']
     @targets             = obj_hash['targets']
-    @targets             = (@targets.nil? || @targets.empty?) ? nil : @targets
+    @targets             = (@targets.nil? || @targets.empty?) ? EMPTY_ARRAY : @targets
     @check               = obj_hash['check'] ? true : false
     @post_auth           = obj_hash['post_auth']
     @default_credential  = obj_hash['default_credential']
