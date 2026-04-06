@@ -39,6 +39,7 @@ class MetasploitModule < Msf::Auxiliary
 
   def validate
     super
+
     case datastore['MODE']
     when 'SPECIFIC_TEMPLATE'
       if datastore['CERT_TEMPLATE'].blank?
@@ -53,13 +54,8 @@ class MetasploitModule < Msf::Auxiliary
   end
 
   def pull_domain(target_ip, target_uri)
-    temp_username = datastore['HttpUsername']
-    temp_password = datastore['HttpPassword']
     begin
       vprint_status("Checking #{target_ip} URL #{target_uri}")
-      # datastore and options must be nil to fail login so we get ntlm challenge
-      datastore['HttpUsername'] = nil
-      datastore['HttpPassword'] = nil
       res = send_request_cgi({
         'rhost' => target_ip,
         'encode' => true,
@@ -75,12 +71,7 @@ class MetasploitModule < Msf::Auxiliary
     rescue ::Timeout::Error, ::Errno::EPIPE
       vprint_error('Timeout error')
       return
-    ensure
-      datastore['HttpUsername'] = temp_username
-      datastore['HttpPassword'] = temp_password
     end
-    datastore['HttpUsername'] = temp_username
-    datastore['HttpPassword'] = temp_password
 
     return nil if res.nil?
 
