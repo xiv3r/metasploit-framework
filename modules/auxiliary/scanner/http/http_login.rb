@@ -16,7 +16,12 @@ class MetasploitModule < Msf::Auxiliary
   def initialize
     super(
       'Name' => 'HTTP Login Utility',
-      'Description' => 'This module attempts to authenticate to an HTTP service.',
+      'Description' => %q{
+        This module attempts to authenticate to HTTP services that
+        require Basic, Digest, or WebDAV authentication.
+        It will probe URIs to identify endpoints requiring authentication (HTTP 401)
+        and then perform brute-force the login.
+      },
       'Author' => [ 'hdm' ],
       'References' => [
         [ 'CVE', '1999-0502'] # Weak password
