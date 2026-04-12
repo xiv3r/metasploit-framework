@@ -120,8 +120,6 @@ class MetasploitModule < Msf::Auxiliary
       return
     end
 
-    print_status('No logout') # TODO: Deleteme
-
     fail_with(Failure::NoAccess, 'Authentication failed')
   end
 
