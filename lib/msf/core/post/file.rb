@@ -118,7 +118,7 @@ module Msf::Post::File
   alias ls dir
 
   # create and mark directory for cleanup
-  def mkdir(path)
+  def mkdir(path, cleanup: true)
     result = nil
     vprint_status("Creating directory #{path}")
     if session.type == 'meterpreter'
@@ -132,7 +132,7 @@ module Msf::Post::File
       result = cmd_exec("mkdir -p '#{path}'")
     end
     vprint_status("#{path} created")
-    register_dir_for_cleanup(path)
+    register_dir_for_cleanup(path) if cleanup
     result
   end
 
