@@ -22,7 +22,7 @@ The following describes how to setup Camaleon CMS version 2.8.0 on Ubuntu.
 guides.rubyonrails.org/install_ruby_on_rails.html
 
 ~~~bash
-sudo apt install build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev git
+sudo apt install build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev git curl
 ~~~
 
 ### Install Mise
