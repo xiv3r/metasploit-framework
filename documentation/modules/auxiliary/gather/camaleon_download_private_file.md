@@ -58,9 +58,6 @@ sudo apt install postgresql
 
 ~~~bash
 $ gem install rails -v 6.1
-
-$ rails --version
-Rails 6.1.7.10
 ~~~
 
 #### concurrent-ruby Issue
@@ -73,6 +70,9 @@ concurrent-ruby (1.3.6)
 
 $ gem install concurrent-ruby -v 1.3.4
 $ gem uninstall concurrent-ruby -v 1.3.6
+
+$ rails --version
+Rails 6.1.7.10
 ~~~
 
 ### Create Rails Project
