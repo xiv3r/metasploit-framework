@@ -22,30 +22,14 @@ module Msf::Payload::Windows
   #
   # ROR hash associations for some of the exit technique routines.
 
-  def self.exitfunc_helper(type)
-    iv = 0 if block_api_iv.nil?
-    case type
-    when 'seh'
-      return Rex::Text.block_api_hash("kernel32.dll", "SetUnhandledExceptionFilter", iv: iv).to_i(16)
-    when 'thread'
-      return Rex::Text.block_api_hash("kernel32.dll", "ExitThread", iv: iv).to_i(16)
-    when 'process'
-      return Rex::Text.block_api_hash("kernel32.dll", "ExitProcess", iv: iv).to_i(16)
-    when 'none'
-      return Rex::Text.block_api_hash("kernel32.dll", "GetLastError", iv: iv).to_i(16)
-    else
-      return 0
-    end
-  end
-
   @@exit_types =
     {
-      nil       => exitfunc_helper(nil),          # Default to nothing
-      ''        => exitfunc_helper(''),           # Default to nothing
-      'seh'     => exitfunc_helper('seh'),        # SetUnhandledExceptionFilter
-      'thread'  => exitfunc_helper('thread'),     # ExitThread
-      'process' => exitfunc_helper('process'),    # ExitProcess
-      'none'    => exitfunc_helper('none')        # GetLastError
+      nil       => 0,          # Default to nothing
+      ''        => 0,          # Default to nothing
+      'seh'     => Rex::Text.block_api_hash("kernel32.dll", "SetUnhandledExceptionFilter").to_i(16), # SetUnhandledExceptionFilter
+      'thread'  => Rex::Text.block_api_hash("kernel32.dll", "ExitThread").to_i(16), # ExitThread
+      'process' => Rex::Text.block_api_hash("kernel32.dll", "ExitProcess").to_i(16), # ExitProcess
+      'none'    => Rex::Text.block_api_hash("kernel32.dll", "GetLastError").to_i(16)  # GetLastError
     }
 
   #
@@ -100,7 +84,18 @@ module Msf::Payload::Windows
       method = datastore[name]
       method = 'thread' if (!method or @@exit_types.include?(method) == false)
 
-      raw[offset, 4] = [ @@exit_types[method] ].pack(pack || 'V')
+      if respond_to?(:block_api_hash)
+        exit_hash = block_api_hash('kernel32.dll', {
+          'seh'     => 'SetUnhandledExceptionFilter',
+          'thread'  => 'ExitThread',
+          'process' => 'ExitProcess',
+          'none'    => 'GetLastError'
+        }[method]).to_i(16)
+      else
+        exit_hash = @@exit_types[method]
+      end
+
+      raw[offset, 4] = [ exit_hash ].pack(pack || 'V')
 
       return true
     end
