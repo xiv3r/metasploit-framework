@@ -17,7 +17,6 @@ module Payload::Windows::BlockApi_x64
   end
 
   def asm_block_api(opts={})
-    @block_api_iv ||= rand(0x100000000)
     asm = Rex::Payloads::Shuffle.from_graphml_file(
       File.join(Msf::Config.install_root, 'data', 'shellcode', 'block_api.x64.graphml'),
       arch: ARCH_X64,
