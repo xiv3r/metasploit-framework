@@ -54,7 +54,6 @@ module Payload::Windows::BindTcp_x64
   # Generate and compile the stager
   #
   def generate_bind_tcp(opts={})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
       cld                    ; Clear the direction flag.
       and rsp, 0xFFFFFFFFFFFFFFF0 ; Ensure RSP is 16 byte aligned

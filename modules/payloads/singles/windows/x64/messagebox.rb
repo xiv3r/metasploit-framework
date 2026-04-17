@@ -36,7 +36,6 @@ module MetasploitModule
   end
 
   def generate(_opts = {})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     style = 0x00
     case datastore['ICON'].upcase.strip
       # default = NO

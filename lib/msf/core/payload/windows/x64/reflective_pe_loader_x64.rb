@@ -4,8 +4,6 @@ module Msf
   module Payload::Windows::ReflectivePELoader_x64
     include Payload::Windows::BlockApi_x64
     def asm_reflective_pe_loader_x64(opts)
-      block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
-
       prologue = ''
       if opts[:is_dll] == true
         prologue = %(

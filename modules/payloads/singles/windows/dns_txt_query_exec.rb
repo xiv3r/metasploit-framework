@@ -67,7 +67,6 @@ module MetasploitModule
   # c.corelan.eu  : contains the last 144 bytes of the alpha shellcode
 
   def generate(_opts = {})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     dnsname = datastore['DNSZONE']
     w_type = 0x0010 # DNS_TYPE_TEXT (TEXT)
     w_type_offset = 0x1c

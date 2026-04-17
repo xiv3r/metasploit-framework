@@ -18,7 +18,6 @@ module Payload::Windows::MigrateCommon
   # Constructs the migrate stub on the fly
   #
   def generate(opts={})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     asm = %Q^
     migrate:
       cld

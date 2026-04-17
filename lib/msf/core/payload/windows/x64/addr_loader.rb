@@ -17,7 +17,6 @@ module Payload::Windows::AddrLoader_x64
   # Generate and compile the loader
   #
   def generate_loader
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
         cld                    ; Clear the direction flag.
         and rsp, ~0xF          ;  Ensure RSP is 16 byte aligned

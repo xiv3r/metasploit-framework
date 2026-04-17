@@ -48,7 +48,6 @@ module Payload::Windows::ReverseTcpRc4_x64
   # Generate and compile the stager
   #
   def generate_reverse_tcp_rc4(opts={})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     combined_asm = %Q^
       cld                     ; Clear the direction flag.
       and rsp, ~0xF           ;  Ensure RSP is 16 byte aligned

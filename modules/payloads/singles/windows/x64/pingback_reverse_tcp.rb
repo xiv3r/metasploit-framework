@@ -40,7 +40,6 @@ module MetasploitModule
   end
 
   def generate(_opts = {})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     # 22 -> "0x00,0x16"
     # 4444 -> "0x11,0x5c"
     encoded_port = [datastore['LPORT'].to_i, 2].pack('vn').unpack('N').first

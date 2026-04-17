@@ -37,7 +37,6 @@ module MetasploitModule
   # Construct the payload
   #
   def generate(_opts = {})
-    block_api_iv # ensure the block API IV is generated before we generate the shellcode so that the hashes are correct
     target_uri = datastore['URL'] || ''
     filename = datastore['EXE'] || ''
     proto = 'https'
