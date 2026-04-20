@@ -13,12 +13,7 @@ module Payload::Windows::BlockApi_x64
   @block_api_iv = nil
 
   def block_api_iv(opts={})
-    if opts.key?(:block_api_iv) && !@block_api_iv.nil? && @block_api_iv != opts[:block_api_iv]
-      print_warning("Warning: block_api_iv is already set to a different value, if you are using an hardcoded value, make sure to call the first function between block_api_iv, asm_block_api and block_api_hash with opts[:block_api_iv] set")
-    end
-    @block_api_iv ||= opts.fetch(:block_api_iv) { rand(0x100000000) }
-    vprint_status("Current block_api_iv: 0x%08x" % @block_api_iv)
-    @block_api_iv
+    @block_api_iv ||= rand(0x100000000)
   end
 
   def asm_block_api(opts={})
