@@ -47,7 +47,8 @@ class MetasploitModule < Msf::Auxiliary
     )
   end
 
-  def check
+  # Remove due to false positives and false negatives: https://github.com/rapid7/metasploit-framework/pull/21332
+  def _check
     # http://blog.nodejs.org/2013/08/21/node-v0-10-17-stable/
     # check if we are < 0.10.17 by seeing if a malformed HTTP request is accepted
     status = Exploit::CheckCode::Safe
