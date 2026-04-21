@@ -149,19 +149,19 @@ class MetasploitModule < Msf::Auxiliary
   end
 
   def smb_description(info)
-    desc = "SMB Detected (versions:#{info[:versions].join(', ')}) (preferred dialect:#{info[:preferred_dialect]})"
+    desc = "SMB Detected (versions: #{info[:versions].join(', ')}) (preferred dialect: #{info[:preferred_dialect]})"
     info[:capabilities].each do |name, values|
-      desc << " (#{name} capabilities:#{values.join(', ')})"
+      desc << " (#{name} capabilities: #{values.join(', ')})"
     end
 
     if info[:signing_required]
-      desc << ' (signatures:required)'
+      desc << ' (signatures: required)'
     else
-      desc << ' (signatures:optional)'
+      desc << ' (signatures: optional)'
     end
-    desc << " (uptime:#{info[:uptime]})" if info[:uptime]
-    desc << " (guid:#{Rex::Text.to_guid(info[:server_guid])})" if info[:server_guid]
-    desc << " (authentication domain:#{info[:auth_domain]})" if info[:auth_domain]
+    desc << " (uptime: #{info[:uptime]})" if info[:uptime]
+    desc << " (guid: #{Rex::Text.to_guid(info[:server_guid])})" if info[:server_guid]
+    desc << " (authentication domain: #{info[:auth_domain]})" if info[:auth_domain]
 
     desc
   end
@@ -209,13 +209,13 @@ class MetasploitModule < Msf::Auxiliary
     end
 
     if !res['build'].to_s.empty?
-      words << " (build:#{res['build']})"
+      words << " (build: #{res['build']})"
       nd_smb_fingerprint[:os_build] = res['build']
       nd_fingerprint_match['os.build'] = res['build']
     end
 
     if !res['lang'].to_s.empty? && res['lang'] != 'Unknown'
-      words << " (language:#{res['lang']})"
+      words << " (language: #{res['lang']})"
       nd_smb_fingerprint[:os_lang] = res['lang']
       nd_fingerprint_match['os.language'] = nd_smb_fingerprint[:os_lang]
     end
