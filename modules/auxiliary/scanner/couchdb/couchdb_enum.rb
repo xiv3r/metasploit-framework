@@ -71,24 +71,29 @@ class MetasploitModule < Msf::Auxiliary
       return false
     end
 
-    if res && res.code == 401
+    if res.code == 401
       print_bad("#{peer} - Authentication required.")
       return false
     end
 
-    if res && res.code == 200
-      res_json = res.get_json_document
-
-      if res_json.empty?
-        vprint_bad("#{peer} - Cannot parse the response, seems like it's not CouchDB.")
-        return false
-      end
-
-      @version = res_json['version'] if res_json['version']
-      return true
+    unless res.code == 200
+      vprint_bad("#{peer} - Unexpected HTTP status #{res.code}, does not appear to be CouchDB.")
+      return false
     end
 
-    vprint_warning("#{peer} - Version not found")
+    res_json = res.get_json_document
+
+    unless res_json.is_a?(Hash) && res_json.key?('couchdb')
+      vprint_bad("#{peer} - Response does not appear to be from CouchDB.")
+      return false
+    end
+
+    @version = res_json['version']
+    unless @version
+      vprint_warning("#{peer} - CouchDB detected but version not found in response.")
+      return false
+    end
+
     true
   end
 
