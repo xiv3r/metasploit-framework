@@ -318,7 +318,7 @@ class MetasploitModule < Msf::Auxiliary
             })
           end
 
-          # Report the service with a friendly banner
+          # Report the service with a detailed friendly banner
           report_service(
             host: ip,
             port: rport,
@@ -338,19 +338,20 @@ class MetasploitModule < Msf::Auxiliary
           )
         elsif smb1_fingerprint['native_os'] || smb1_fingerprint['native_lm']
           desc = "#{smb1_fingerprint['native_os']} (#{smb1_fingerprint['native_lm']})"
-          report_service(host: ip, port: rport, name: 'smb', info: desc)
+
+          # Report the service with a friendly banner
+          report_service(
+            host: ip,
+            port: rport,
+            proto: 'tcp',
+            name: 'smb',
+            info: desc
+          )
+
           lines << { type: :status, message: "  Host could not be identified: #{desc}" }
         else
           lines << { type: :status, message: '  Host could not be identified', verbose: true }
         end
-
-        report_service(
-          host: ip,
-          port: rport,
-          proto: 'tcp',
-          name: 'smb',
-          info: "#{smb_desc}. #{os_desc}"
-        )
 
         # Report a smb.fingerprint hash of attributes for OS fingerprinting
         report_note(
