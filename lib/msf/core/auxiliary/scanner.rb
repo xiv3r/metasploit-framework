@@ -55,7 +55,7 @@ end
 # The command handler when launched from the console
 #
 def run
-  @scanner_run_completed = true
+  @scanner_run_completed = false
   @show_progress = datastore['ShowProgress']
   @show_percent  = datastore['ShowProgressPercent'].to_i
 
@@ -141,7 +141,6 @@ def run
             print_status("Error: #{targ}: #{e.class} #{e.message}")
             elog("Error running against host #{targ}", error: e)
           ensure
-            nmod.report_failure
             nmod.cleanup
           end
         end
@@ -230,7 +229,6 @@ def run
             rescue ::Exception => e
               print_status("Error: #{mybatch[0]}-#{mybatch[-1]}: #{e}")
             ensure
-              nmod.report_failure
               nmod.cleanup
             end
           end
@@ -276,6 +274,7 @@ def run
     print_status("Caught interrupt from the console...")
     return
   ensure
+    @scanner_run_completed = true
     seppuko!()
   end
 end

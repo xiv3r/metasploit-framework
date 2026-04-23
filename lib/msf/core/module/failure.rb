@@ -93,6 +93,8 @@ module Msf::Module::Failure
       info[:port] = self.datastore['RPORT']
       if self.class.ancestors.include?(Msf::Exploit::Remote::Tcp)
         info[:proto] = 'tcp'
+      elsif self.class.ancestors.include?(Msf::Exploit::Remote::Udp)
+        info[:proto] = 'udp'
       end
     end
 
@@ -127,9 +129,9 @@ module Msf::Module::Failure
     # check_code is available, update the existing attempt so it carries the
     # check result details (the attempt created by report_vuln may not have
     # had the check_code yet because it runs before job_run_proc stores it).
-    if self.respond_to?(:vuln_attempt_recorded) && self.vuln_attempt_recorded
+    if self.respond_to?(:last_vuln_attempt) && self.last_vuln_attempt
       if self.respond_to?(:check_code) && self.check_code.is_a?(Msf::Exploit::CheckCode)
-        _enrich_existing_vuln_attempt(info)
+        _enrich_existing_vuln_attempt(info, self.last_vuln_attempt)
       end
       info[:skip_vuln_attempt] = true
     end
@@ -139,28 +141,51 @@ module Msf::Module::Failure
 
   private
 
-  # Update the most recent VulnAttempt for this module/host with check code
-  # details that were not available when report_vuln originally created it.
-  def _enrich_existing_vuln_attempt(info)
+  # Update the VulnAttempt for this module/host with check code details that
+  # were not available when report_vuln originally created it.
+  #
+  # @param info [Hash] enrichment data built by report_failure
+  # @param recorded_attempt [Mdm::VulnAttempt, true] the attempt object stored
+  #   by report_vuln, or +true+ if only the flag was propagated (legacy/fallback).
+  def _enrich_existing_vuln_attempt(info, recorded_attempt = nil)
     return unless framework.db&.active
 
-    host = info[:host]
-    return unless host
+    # Use the stored attempt directly when available — avoids a racy
+    # re-query that could match the wrong row under concurrency.
+    attempt = recorded_attempt if recorded_attempt.is_a?(::Mdm::VulnAttempt)
 
-    host_obj = if host.is_a?(::Mdm::Host)
-                 host
-               else
-                 wspace = info[:workspace] || framework.db.find_workspace(workspace)
-                 framework.db.get_host(workspace: wspace, address: host.to_s)
-               end
-    return unless host_obj
+    # Fallback: re-query if we only have the boolean flag (e.g. propagated
+    # through a replicant that only forwarded +true+).
+    if attempt.nil?
+      host = info[:host]
+      return unless host
 
-    # Find the most recent vuln attempt for this module on this host
-    attempt = ::Mdm::VulnAttempt
+      host_obj = if host.is_a?(::Mdm::Host)
+                   host
+                 else
+                   wspace = info[:workspace] || framework.db.find_workspace(workspace)
+                   framework.db.get_host(workspace: wspace, address: host.to_s)
+                 end
+      return unless host_obj
+
+      scope = ::Mdm::VulnAttempt
                 .joins(:vuln)
                 .where(module: fullname, vulns: { host_id: host_obj.id })
-                .order(attempted_at: :desc)
-                .first
+
+      # Narrow by service attributes when available so we don't match an
+      # attempt against a different service on the same host (e.g. port 80
+      # vs 9200, or TCP vs UDP on the same port).
+      if info[:port]
+        service_conditions = { port: info[:port] }
+        service_conditions[:proto] = info[:proto].to_s.downcase if info[:proto]
+
+        scope = scope.joins(vuln: :service)
+                     .where(services: service_conditions)
+      end
+
+      attempt = scope.order(attempted_at: :desc).first
+    end
+
     return unless attempt
 
     updates = {}

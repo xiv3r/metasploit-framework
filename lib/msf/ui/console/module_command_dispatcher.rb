@@ -178,9 +178,17 @@ module ModuleCommandDispatcher
     opts = {
       workspace: instance.workspace,
       host: instance.respond_to?(:target_host) && instance.target_host ? instance.target_host : instance.datastore['RHOST'],
-      proto: instance.datastore['PROTO'] || 'tcp',
+      proto: if instance.class.ancestors.include?(Msf::Exploit::Remote::Udp)
+               'udp'
+             else
+               'tcp'
+             end,
       name: instance.name,
-      info: "This was flagged as vulnerable by the explicit check of #{instance.fullname}.",
+      info: if checkcode == Msf::Exploit::CheckCode::Appears
+              "Target appears vulnerable based on the explicit check of #{instance.fullname}."
+            else
+              "Vulnerability confirmed by the explicit check of #{instance.fullname}."
+            end,
       refs: instance.references
     }
 

@@ -561,7 +561,7 @@ RSpec.describe 'Vuln and VulnAttempt registration', if: !ENV['REMOTE_DB'] do
     # cmd_check — scanner replicant check flow (ms12_020-style)
     #
     # When check_host calls report_vuln internally, MultipleTargetHosts#check
-    # creates a replicant.  The vuln_attempt_recorded flag must propagate back
+    # creates a replicant.  The last_vuln_attempt must propagate back
     # so report_failure does not create a duplicate.
     # ---------------------------------------------------------------------------
     describe 'cmd_check — scanner replicant check flow (report_vuln inside check_host)' do
@@ -691,6 +691,56 @@ RSpec.describe 'Vuln and VulnAttempt registration', if: !ENV['REMOTE_DB'] do
 
         it 'does not create a vuln attempt' do
           expect(Mdm::VulnAttempt.count).to eq(0)
+        end
+      end
+
+      context 'when check_host reports a vuln on two different ports' do
+        let(:current_mod) do
+          check_reporting_scanner_class.injected_check_code = vulnerable_check_code
+          build_module(check_reporting_scanner_class)
+        end
+
+        before do
+          current_mod.datastore['RHOSTS'] = '192.0.2.1'
+
+          current_mod.datastore['RPORT'] = 3389
+          aux_dispatcher.cmd_check
+
+          current_mod.datastore['RPORT'] = 3390
+          aux_dispatcher.cmd_check
+        end
+
+        it 'creates two separate vulns (one per port)' do
+          expect(Mdm::Vuln.count).to eq(2)
+        end
+
+        it 'creates two vuln attempts (one per vuln)' do
+          expect(Mdm::VulnAttempt.count).to eq(2)
+        end
+
+        it 'associates each vuln attempt with the correct port' do
+          Mdm::VulnAttempt.find_each do |attempt|
+            vuln_port = attempt.vuln.service&.port
+            expect([3389, 3390]).to include(vuln_port)
+          end
+        end
+
+        it 'sets check_code on both vuln attempts' do
+          Mdm::VulnAttempt.find_each do |attempt|
+            expect(attempt.check_code).to eq('vulnerable')
+          end
+        end
+
+        it 'sets check_detail on both vuln attempts' do
+          Mdm::VulnAttempt.find_each do |attempt|
+            expect(attempt.check_detail).to eq(check_detail_message)
+          end
+        end
+
+        it 'sets fail_reason to none on both vuln attempts' do
+          Mdm::VulnAttempt.find_each do |attempt|
+            expect(attempt.fail_reason).to eq(Msf::Module::Failure::None)
+          end
         end
       end
     end
@@ -837,7 +887,7 @@ RSpec.describe 'Vuln and VulnAttempt registration', if: !ENV['REMOTE_DB'] do
 
       context 'when only one of two hosts has a vuln' do
         let(:current_mod) do
-          selective_scanner_class.vulnerable_hosts = Set['192.0.2.1']
+          selective_scanner_class.vulnerable_hosts = ['192.0.2.1']
           selective_scanner_class.injected_check_code = appears_check_code
           build_module(selective_scanner_class)
         end

@@ -187,10 +187,11 @@ class Auxiliary < Msf::Module
   attr_accessor  :check_code
 
   #
-  # Whether a vuln attempt was already recorded during this run (used to
-  # prevent duplicate attempts when report_failure is called later).
+  # The VulnAttempt object created during this run, or nil/false if none
+  # was recorded.  Used to prevent duplicate attempts when report_failure
+  # is called later and to enrich the attempt with check code details.
   #
-  attr_accessor  :vuln_attempt_recorded
+  attr_accessor  :last_vuln_attempt
 
   attr_accessor :queue
 

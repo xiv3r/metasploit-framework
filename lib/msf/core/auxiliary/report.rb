@@ -326,17 +326,19 @@ module Auxiliary::Report
     if check_code.is_a?(Msf::Exploit::CheckCode)
       attempt_info[:check_code] = check_code.code
       attempt_info[:check_detail] = check_code.reason || check_code.message
+      attempt_info[:fail_detail] = nil
       mapped_reason = Msf::Module::Failure.fail_reason_from_check_code(check_code)
       attempt_info[:fail_reason] = mapped_reason if mapped_reason
     end
 
     # TODO: figure out what opts are required and why the above logic doesn't match that of the db_manager method
-    framework.db.report_vuln_attempt(vuln, attempt_info)
+    attempt = framework.db.report_vuln_attempt(vuln, attempt_info)
 
-    # Signal that a vuln attempt was already recorded for this run so that
-    # report_failure (called later by the job wrapper) can skip creating a
-    # duplicate attempt in do_report_failure_or_success.
-    self.vuln_attempt_recorded = true if self.respond_to?(:vuln_attempt_recorded=)
+    # Store the attempt object so that report_failure (called later by the
+    # job wrapper) can enrich it directly without re-querying the DB.
+    if self.respond_to?(:last_vuln_attempt=)
+      self.last_vuln_attempt = attempt || true
+    end
 
     vuln
   end

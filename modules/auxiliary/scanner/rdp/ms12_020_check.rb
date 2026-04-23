@@ -166,11 +166,8 @@ class MetasploitModule < Msf::Auxiliary
       report_goods
       return Exploit::CheckCode::Vulnerable('Response confirmed vulnerability presence')
     else
-      return Exploit::CheckCode::Safe('Not vulerable')
+      return Exploit::CheckCode::Safe('Not vulnerable')
     end
-
-    # Can't determine, but at least I know the service is running
-    return Exploit::CheckCode::Detected('Service detected, but unable to confirm vulnerability')
   end
 
   def check_host(ip)

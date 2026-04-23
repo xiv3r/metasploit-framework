@@ -353,17 +353,17 @@ GEM
       mutex_m
       railties (~> 7.0)
     metasploit-payloads (2.0.245)
-    metasploit_data_models (6.0.15)
-      activerecord (~> 7.0)
-      activesupport (~> 7.0)
+    metasploit_data_models (6.0.18)
+      activerecord (>= 7.0, < 8.1)
+      activesupport (>= 7.0, < 8.1)
       arel-helpers
       bigdecimal
       drb
       metasploit-concern
-      metasploit-model (~> 5.0.4)
+      metasploit-model (>= 5.0.4)
       mutex_m
       pg
-      railties (~> 7.0)
+      railties (>= 7.0, < 8.1)
       recog
       webrick
     metasploit_payloads-mettle (1.0.46)

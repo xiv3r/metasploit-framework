@@ -176,7 +176,7 @@ protected
       begin
         job_listener.start run_uuid
         mod.check_code = nil if mod.respond_to?(:check_code=)
-        mod.vuln_attempt_recorded = false if mod.respond_to?(:vuln_attempt_recorded=)
+        mod.last_vuln_attempt = nil if mod.respond_to?(:last_vuln_attempt=)
         mod.setup
         mod.framework.events.on_module_run(mod)
         result = block.call(mod)

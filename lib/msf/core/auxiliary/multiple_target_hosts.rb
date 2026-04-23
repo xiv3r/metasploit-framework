@@ -22,12 +22,12 @@ module Auxiliary::MultipleTargetHosts
     nmod = replicant
     result = nmod.check_host(datastore['RHOST'])
 
-    # Propagate the vuln_attempt_recorded flag back from the replicant so
-    # that the ensure block in job_run_proc (which calls report_failure on
-    # the *original* instance) knows a vuln attempt was already created and
-    # can skip creating a duplicate.
-    if nmod.respond_to?(:vuln_attempt_recorded) && nmod.vuln_attempt_recorded && respond_to?(:vuln_attempt_recorded=)
-      self.vuln_attempt_recorded = true
+    # Propagate the last_vuln_attempt (which may be the actual VulnAttempt
+    # object) back from the replicant so that the ensure block in
+    # job_run_proc (which calls report_failure on the *original* instance)
+    # knows a vuln attempt was already created and can enrich it directly.
+    if nmod.respond_to?(:last_vuln_attempt) && nmod.last_vuln_attempt && respond_to?(:last_vuln_attempt=)
+      self.last_vuln_attempt = nmod.last_vuln_attempt
     end
 
     result
